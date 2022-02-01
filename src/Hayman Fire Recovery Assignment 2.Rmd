@@ -1,10 +1,11 @@
 ---
 title: "Hayman Fire Recovery"
-author: "Matthew Ross"
-date: "10/3/2019"
+author: "Keian Freshwater"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
 
+**Library set-up for the document:**
 ```{r setup, warning=F,message=F}
 library(tidyverse)
 library(tidyr)
@@ -17,7 +18,7 @@ library(lubridate)
 knitr::opts_knit$set(root.dir='..')
 ```
 
-
+**Reading in Selected Datasets:**
 ```{r dataread, warning=F,message=F}
 ####-----Reading in Data and Stacking it ----- ####
 #Reading in files
@@ -49,44 +50,230 @@ full_long <- rbind(ndvi,ndmi,ndsi) %>%
 
 
 
-## Question 1) 
+## Question 1 
 
-What is the correlation between NDVI and NDMI? - here I want you to
-convert the full_long dataset in to a wide dataset using the 
-function "spread" and then make a plot that shows the correlation s a
-function of if the site was burned or not (x axis should be ndmi)
-You should exclude winter months and focus on summer months
+### Correlation between NDVI and NDMI, using a wide dataset. Data is between 1984-2019, and focuses on summer months (Jun-Sept):
 
+```{r, warning=F}
+full_wide <- spread(full_long,data,value) %>%
+    mutate(month=month(DateTime),
+           year=year(DateTime)) %>%
+    filter(month %in% c(6,7,8,9))
+```
+**Plotting the Correlation between NDVI and NDMI:**
+```{r,warning=F}
+ggplot(data=full_wide,aes(x=ndmi,y=ndvi, color=month)) +
+       geom_point() +
+       xlab('NDMI') +
+       ylab ('NDVI')
+         
+```
 
-
+  
 ## Question 2 
 
-2) What is the correlation between average NDSI (normalized
- snow index) for January - April and average NDVI for June-August?
-In other words, does the previous year's snow cover influence vegetation
- growth for the following summer?
+### Correlation between average NDSI (normalized snow index) for January - April and average NDVI for June-August. Does the previous year's snow cover influence vegetation growth for the following summer?
 
+**Creating a clean data set containing relevant averages:**
+```{r, warning=F, message=F}
+full_wide_full <- spread(full_long,data,value) %>%
+  mutate(month=month(DateTime),
+           year=year(DateTime)) %>%
+  group_by(site,year)
 
+```
+```{r, warning=F, message=F}
+full_wide_average_summer <- full_wide_full  %>%
+  filter(month %in% c(6,7,8))%>%
+  group_by(year) %>%
+  summarize(mean_NDVI_summer = mean(ndvi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_average_spring <- full_wide_full  %>%
+  filter(month %in% c(1,2,3,4))%>%
+  group_by(year) %>%
+  summarize(mean_NDSI_spring = mean(ndsi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_average <- inner_join(full_wide_average_spring,full_wide_average_summer)
+```
+**Plotting the Correlation between average summer NDVI and average spring NDSI:**
+```{r, warning=F, message=F}
+ggplot(data=full_wide_average,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=year)) +
+       geom_point() +
+       xlab('Average NDSI (Jan-Apr)') +
+       ylab ('Average NDVI (Jun-Aug)')
+```
+
+  
 ## Q3
 
-How is the snow effect from question 2 different between pre- and post-burn
-and burned and unburned? 
+### How is the snow effect from question 2 different between pre- and post-burn and burned and unburned? 
 
+**Filter by Burned/Unburned:**
+```{r, warning=F, message=F}
+full_wide_unburned <- full_wide_full  %>%
+  filter(site %in% c('unburned'))
+full_wide_burned <- full_wide_full  %>%
+  filter(site %in% c('burned'))
+```
+**Filter and Graph Unburned average summer NDVI and average spring NDSI:**
+```{r, warning=F, message=F}
+full_wide_unburned_average_summer <- full_wide_unburned  %>%
+  filter(month %in% c(6,7,8))%>%
+  group_by(year) %>%
+  summarize(mean_NDVI_summer = mean(ndvi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_unburned_average_spring <- full_wide_unburned  %>%
+  filter(month %in% c(1,2,3,4))%>%
+  group_by(year) %>%
+  summarize(mean_NDSI_spring = mean(ndsi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_average_unburned <- inner_join(full_wide_unburned_average_spring,full_wide_unburned_average_summer)
+```
+```{r, warning=F, message=F}
+ggplot(data=full_wide_average_unburned,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=year)) +
+       geom_point() +
+       xlab('Average NDSI (Jan-Apr)') +
+       ylab ('Average NDVI (Jun-Aug)')
+```
+  
+**Filter and Graph Burned average summer NDVI and average spring NDSI:**
+```{r, warning=F, message=F}
+full_wide_burned_average_summer <- full_wide_burned  %>%
+  filter(month %in% c(6,7,8))%>%
+  group_by(year) %>%
+  summarize(mean_NDVI_summer = mean(ndvi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_burned_average_spring <- full_wide_burned  %>%
+  filter(month %in% c(1,2,3,4))%>%
+  group_by(year) %>%
+  summarize(mean_NDSI_spring = mean(ndsi,na.rm=TRUE))
+```
+```{r, warning=F, message=F}
+full_wide_average_burned <- inner_join(full_wide_burned_average_summer,full_wide_burned_average_spring)
+```
+```{r, warning=F, message=F}
+ggplot(data=full_wide_average_burned,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=year)) +
+       geom_point() +
+       xlab('Average NDSI (Jan-Apr)') +
+       ylab ('Average NDVI (Jun-Aug)')
+```
 
+  
 ## Question 4
 
-What month is the greenest month on average? 
+**For the following questions:**
+```{r, warning=F, message=F}
+full_wide_jan <- full_wide_full  %>%
+  filter(month %in% c(1)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_feb <- full_wide_full  %>%
+  filter(month %in% c(2)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_mar <- full_wide_full  %>%
+  filter(month %in% c(3)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_apr <- full_wide_full  %>%
+  filter(month %in% c(4)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_may <- full_wide_full  %>%
+  filter(month %in% c(5)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_jun <- full_wide_full  %>%
+  filter(month %in% c(6)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_jul <- full_wide_full  %>%
+  filter(month %in% c(7)) %>%
+  select(-DateTime) %>%
+  group_by(year,ndvi,ndmi,ndsi)
+full_wide_aug <- full_wide_full  %>%
+  filter(month %in% c(8)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_sept <- full_wide_full  %>%
+  filter(month %in% c(9)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_oct <- full_wide_full  %>%
+ filter(month %in% c(10)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_nov <- full_wide_full  %>%
+  filter(month %in% c(11)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+full_wide_dec <- full_wide_full  %>%
+  filter(month %in% c(12)) %>%
+  group_by(month) %>%
+  select(-DateTime,-site,-year)
+```
 
 
+### What month is the greenest month on average? 
+
+**Calculate Averages for NDVI:**
+
+```{r}
+jan_NDVI <- mean(full_wide_jan$ndvi,na.rm=TRUE)
+feb_NDVI <- mean(full_wide_feb$ndvi,na.rm=TRUE)
+mar_NDVI <- mean(full_wide_mar$ndvi,na.rm=TRUE)
+apr_NDVI <- mean(full_wide_apr$ndvi,na.rm=TRUE)
+may_NDVI <- mean(full_wide_may$ndvi,na.rm=TRUE)
+jun_NDVI <- mean(full_wide_jun$ndvi,na.rm=TRUE)
+jul_NDVI <- mean(full_wide_jul$ndvi,na.rm=TRUE)
+aug_NDVI <- mean(full_wide_aug$ndvi,na.rm=TRUE)
+sept_NDVI <- mean(full_wide_sept$ndvi,na.rm=TRUE)
+oct_NDVI <- mean(full_wide_oct$ndvi,na.rm=TRUE)
+nov_NDVI <- mean(full_wide_nov$ndvi,na.rm=TRUE)
+dec_NDVI <- mean(full_wide_nov$ndvi,na.rm=TRUE)
+```
+**Organize in Table:**
+```{r}
+green_NVDI <- rbind.data.frame(jan_NDVI,feb_NDVI,mar_NDVI,apr_NDVI,may_NDVI,jun_NDVI,jul_NDVI,aug_NDVI,sept_NDVI,oct_NDVI,nov_NDVI,dec_NDVI) %>%
+  rename(NDVI = c.0.218601234567901..0.198653947368421..0.2019..0.250171647509579..)
+greenest_month <- max(green_NVDI)
+```
+The greenest month is August, with an average NDVI of `r greenest_month`.
 
 
-## Question 5) 
+## Question 5
+### What month is the snowiest on average?
 
-What month is the snowiest on average?
+**Calculate Averages for NDVI:**
 
+```{r}
+jan_NDSI <- mean(full_wide_jan$ndsi,na.rm=TRUE)
+feb_NDSI <- mean(full_wide_feb$ndsi,na.rm=TRUE)
+mar_NDSI <- mean(full_wide_mar$ndsi,na.rm=TRUE)
+apr_NDSI <- mean(full_wide_apr$ndsi,na.rm=TRUE)
+may_NDSI <- mean(full_wide_may$ndsi,na.rm=TRUE)
+jun_NDSI <- mean(full_wide_jun$ndsi,na.rm=TRUE)
+jul_NDSI <- mean(full_wide_jul$ndsi,na.rm=TRUE)
+aug_NDSI <- mean(full_wide_aug$ndsi,na.rm=TRUE)
+sept_NDSI <- mean(full_wide_sept$ndsi,na.rm=TRUE)
+oct_NDSI <- mean(full_wide_oct$ndsi,na.rm=TRUE)
+nov_NDSI <- mean(full_wide_nov$ndsi,na.rm=TRUE)
+dec_NDSI <- mean(full_wide_nov$ndsi,na.rm=TRUE)
+```
+**Organize in Table:**
+```{r}
+snow_NDSI <- rbind.data.frame(jan_NDSI,feb_NDSI,mar_NDSI,apr_NDSI,may_NDSI,jun_NDSI,jul_NDSI,aug_NDSI,sept_NDSI,oct_NDSI,nov_NDSI,dec_NDSI) %>%
+  rename(NDSI = c.0.209958436213992..0.198818340611354...0.0420229007633588..)
+snowiest_month <- max(snow_NDSI)
+```
+The snowiest month is January, with an average NDSI of `r snowiest_month`. 
 
 ## Bonus Question: Redo all problems with `spread` and `gather` using modern tidyverse syntax. 
-
 
 ## Bonus Question: Use Climage Engine to pull the same data for the assignment, but updated with 2020/2021 data.
 
