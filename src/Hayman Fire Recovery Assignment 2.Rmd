@@ -22,7 +22,7 @@ knitr::opts_knit$set(root.dir='..')
 ```{r dataread, warning=F,message=F}
 ####-----Reading in Data and Stacking it ----- ####
 #Reading in files
-files <- list.files('data',full.names=T)
+files <- list.files('data/original',full.names=T)
 
 
 #Read in individual data files
@@ -43,8 +43,6 @@ ndvi <- read_csv(files[3])%>%
 full_long <- rbind(ndvi,ndmi,ndsi) %>%
   gather(key='site',value='value',-DateTime,-data) %>%
   filter(!is.na(value))
-
-
 ```
 
 
@@ -69,7 +67,10 @@ ggplot(data=full_wide,aes(x=ndmi,y=ndvi, color=month)) +
          
 ```
 
-  
+   
+There is a strong positive linear correlation between NDMI and NDVI.
+   
+
 ## Question 2 
 
 ### Correlation between average NDSI (normalized snow index) for January - April and average NDVI for June-August. Does the previous year's snow cover influence vegetation growth for the following summer?
@@ -97,6 +98,7 @@ full_wide_average_spring <- full_wide_full  %>%
 ```{r, warning=F, message=F}
 full_wide_average <- inner_join(full_wide_average_spring,full_wide_average_summer)
 ```
+
 **Plotting the Correlation between average summer NDVI and average spring NDSI:**
 ```{r, warning=F, message=F}
 ggplot(data=full_wide_average,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=year)) +
@@ -105,6 +107,8 @@ ggplot(data=full_wide_average,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=y
        ylab ('Average NDVI (Jun-Aug)')
 ```
 
+    
+There is little correlation between average spring NDSI and average summer NDVI; if generous, there might be a weak positive correlation. Overall, the most notable pattern is that, for roughly the same range of NDSI, the average summer NDVI is, generally, lower in the 2010s compared to the 1990s.
   
 ## Q3
 
@@ -133,6 +137,7 @@ full_wide_unburned_average_spring <- full_wide_unburned  %>%
 ```{r, warning=F, message=F}
 full_wide_average_unburned <- inner_join(full_wide_unburned_average_spring,full_wide_unburned_average_summer)
 ```
+   
 ```{r, warning=F, message=F}
 ggplot(data=full_wide_average_unburned,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, color=year)) +
        geom_point() +
@@ -140,6 +145,10 @@ ggplot(data=full_wide_average_unburned,aes(x=mean_NDSI_spring,y=mean_NDVI_summer
        ylab ('Average NDVI (Jun-Aug)')
 ```
   
+  
+The unburned graph supports the identical conclusion as problem 2; there is little (at most, weak positive) correlation between Average Spring NDSI and Average Summer NDVI.
+
+
 **Filter and Graph Burned average summer NDVI and average spring NDSI:**
 ```{r, warning=F, message=F}
 full_wide_burned_average_summer <- full_wide_burned  %>%
@@ -163,7 +172,8 @@ ggplot(data=full_wide_average_burned,aes(x=mean_NDSI_spring,y=mean_NDVI_summer, 
        ylab ('Average NDVI (Jun-Aug)')
 ```
 
-  
+In the 1980s and 1990s, the burned areas had exclusively high NDVI regardless of of NDSI, while the 2000s and 2010s had comparatively low NDVI regardless of NDSI.
+   
 ## Question 4
 
 **For the following questions:**
@@ -235,15 +245,14 @@ aug_NDVI <- mean(full_wide_aug$ndvi,na.rm=TRUE)
 sept_NDVI <- mean(full_wide_sept$ndvi,na.rm=TRUE)
 oct_NDVI <- mean(full_wide_oct$ndvi,na.rm=TRUE)
 nov_NDVI <- mean(full_wide_nov$ndvi,na.rm=TRUE)
-dec_NDVI <- mean(full_wide_nov$ndvi,na.rm=TRUE)
+dec_NDVI <- mean(full_wide_dec$ndvi,na.rm=TRUE)
 ```
 **Organize in Table:**
 ```{r}
-green_NVDI <- rbind.data.frame(jan_NDVI,feb_NDVI,mar_NDVI,apr_NDVI,may_NDVI,jun_NDVI,jul_NDVI,aug_NDVI,sept_NDVI,oct_NDVI,nov_NDVI,dec_NDVI) %>%
-  rename(NDVI = c.0.218601234567901..0.198653947368421..0.2019..0.250171647509579..)
+green_NVDI <- rbind.data.frame(jan_NDVI,feb_NDVI,mar_NDVI,apr_NDVI,may_NDVI,jun_NDVI,jul_NDVI,aug_NDVI,sept_NDVI,oct_NDVI,nov_NDVI,dec_NDVI)
 greenest_month <- max(green_NVDI)
 ```
-The greenest month is August, with an average NDVI of `r greenest_month`.
+NDVI stands for 'Normalized Difference Vegetation Index', where the highest NDVI will indicate the greenest month on average. The greenest month is August, with an average NDVI of `r greenest_month`.
 
 
 ## Question 5
@@ -263,20 +272,37 @@ aug_NDSI <- mean(full_wide_aug$ndsi,na.rm=TRUE)
 sept_NDSI <- mean(full_wide_sept$ndsi,na.rm=TRUE)
 oct_NDSI <- mean(full_wide_oct$ndsi,na.rm=TRUE)
 nov_NDSI <- mean(full_wide_nov$ndsi,na.rm=TRUE)
-dec_NDSI <- mean(full_wide_nov$ndsi,na.rm=TRUE)
+dec_NDSI <- mean(full_wide_dec$ndsi,na.rm=TRUE)
 ```
 **Organize in Table:**
 ```{r}
-snow_NDSI <- rbind.data.frame(jan_NDSI,feb_NDSI,mar_NDSI,apr_NDSI,may_NDSI,jun_NDSI,jul_NDSI,aug_NDSI,sept_NDSI,oct_NDSI,nov_NDSI,dec_NDSI) %>%
-  rename(NDSI = c.0.209958436213992..0.198818340611354...0.0420229007633588..)
+snow_NDSI <- rbind.data.frame(jan_NDSI,feb_NDSI,mar_NDSI,apr_NDSI,may_NDSI,jun_NDSI,jul_NDSI,aug_NDSI,sept_NDSI,oct_NDSI,nov_NDSI,dec_NDSI)
 snowiest_month <- max(snow_NDSI)
 ```
-The snowiest month is January, with an average NDSI of `r snowiest_month`. 
+NDSI stands for 'Normalized Difference Snow Index', where the highest NDSI will indicate the snowiest month on average. The snowiest month is January, with an average NDSI of `r snowiest_month`. 
 
 ## Bonus Question: Redo all problems with `spread` and `gather` using modern tidyverse syntax. 
 
-## Bonus Question: Use Climage Engine to pull the same data for the assignment, but updated with 2020/2021 data.
+### Note: Completion of Problem 1 only:
+
+#### Problem 1:
+
+```{r, warning=F}
+full_wide_pivot_bonus_1 <- full_long %>%
+  pivot_wider(id_cols= NULL, names_from = "data", values_from = "value") %>%
+  mutate(month=month(DateTime),
+           year=year(DateTime))  %>%
+  filter(month %in% c(6,7,8,9))
+```
+
+```{r, warning=F}
+ggplot(data=full_wide_pivot_bonus_1,aes(x=ndmi,y=ndvi, color=month)) +
+       geom_point() +
+       xlab('NDMI') +
+       ylab ('NDVI')
+```
 
 
+# Bonus Question: Use Climage Engine to pull the same data for the assignment, but updated with 2020/2021 data.
 
-
+[insert link here]
